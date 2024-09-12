@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
-namespace AllTwinCAT.TcStaticAnalysisLoader {
+namespace AllTwinCAT.TcStaticAnalysisLoader
+{
     public class MessageFilter : IOleMessageFilter {
         // Class containing the IOleMessageFilter
         // thread error-handling functions.

@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  tcstaticanalysisloader:
+    image: ${DOCKER_REGISTRY-}tcstaticanalysisloader
+    build:
+      context: TcStaticAnalysisLoader
+      dockerfile: Dockerfile

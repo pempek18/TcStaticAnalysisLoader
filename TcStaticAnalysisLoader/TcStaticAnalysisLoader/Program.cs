@@ -20,13 +20,14 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-
 using EnvDTE80;
 using NDesk.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
 using TCatSysManagerLib;
@@ -141,26 +142,29 @@ namespace AllTwinCAT.TcStaticAnalysisLoader
                 Console.WriteLine("The minimum version that supports TE1200 is " + Constants.MIN_TC_VERSION_FOR_SC_ANALYSIS);
                 return Constants.RETURN_ERROR;
             }
-
+            
             MessageFilter.Register();
 
             /* Make sure the DTE loads with the same version of Visual Studio as the
              * TwinCAT project was created in
              */
             string VisualStudioProgId = "VisualStudio.DTE." + vsVersion;
-            Type type = System.Type.GetTypeFromProgID(VisualStudioProgId);
-            EnvDTE80.DTE2 dte = (EnvDTE80.DTE2)System.Activator.CreateInstance(type);
-
+            Type type = Type.GetTypeFromProgID(VisualStudioProgId);
+            if (type == null)
+            {
+                Console.WriteLine($"Unable to find type from ProgID: {VisualStudioProgId}");
+                return Constants.RETURN_ERROR;
+            }
+            DTE2 dte = (DTE2)Activator.CreateInstance(type);
             dte.SuppressUI = true;
             dte.MainWindow.Visible = false;
             EnvDTE.Solution visualStudioSolution = dte.Solution;
             visualStudioSolution.Open(@VisualStudioSolutionFilePath);
             EnvDTE.Project pro = visualStudioSolution.Projects.Item(1);
-
-            ITcRemoteManager remoteManager = dte.GetObject("TcRemoteManager");
+            ITcRemoteManager remoteManager = dte.GetObject("TcRemoteManager") as ITcRemoteManager;
             remoteManager.Version = tcVersion;
             var settings = dte.GetObject("TcAutomationSettings");
-            settings.SilentMode = true; // Only available from TC3.1.4020.0 and above
+            //settings.SilentMode = true; // Only available from TC3.1.4020.0 and above
 
             /* Build the solution and collect any eventual errors. Make sure to
              * filter out everything that is 
@@ -205,7 +209,7 @@ namespace AllTwinCAT.TcStaticAnalysisLoader
         static void DisplayHelp(OptionSet p) {
             Console.WriteLine("Usage: TcStaticAnalysisLoader [OPTIONS]");
             Console.WriteLine("Loads the TwinCAT static code analysis loader program with the selected visual studio solution and TwinCAT project.");
-            Console.WriteLine("Example: TcStaticAnalysisLoader -v \"C:\\Jenkins\\workspace\\TcProject\\TcProject.sln\" -t \"C:\\Jenkins\\workspace\\TcProject\\PlcProject1\\PlcProj.tsproj\"");
+            Console.WriteLine("Example: TcStaticAnalysisLoader -v \"C:\\Jenkins\\bitBucket\\TcProject\\TcProject.sln\" -t \"C:\\Jenkins\\bitBucket\\TcProject\\PlcProject1\\PlcProj.tsproj\"");
             Console.WriteLine();
             Console.WriteLine("Options:");
             p.WriteOptionDescriptions(Console.Out);
